@@ -34,6 +34,7 @@ for omicron in range(6,11):
         if n==1:
             #s=str('2a_scal_new.dat')
             s=str(f'S{omicron}met1.dat')
+            #s=str('2a_scal_new.dat')
         if n==2:
             s=str('2b_tcal.dat')  
         if n==3:
@@ -50,6 +51,7 @@ for omicron in range(6,11):
             
             #s=str('S6OH.dat')
             s=str(f'S{omicron}OH.dat')
+            #s=str('method5.dat')
         if n==1:
             po=str('ON-OFF/OFF (Method 1)')
         if n==2:
@@ -73,6 +75,7 @@ for omicron in range(6,11):
         col2=file1[:,5]
         col3=file1[:,6]
         colav1=(col2+col3)/2
+        
         yvalue1=[]
         yvalue2=[]
         yvalue3=[]
@@ -89,7 +92,7 @@ for omicron in range(6,11):
         
         for i in range(len(col1)):
             
-            if col1[i]>1665.2 and col1[i]<1665.7:
+            if col1[i]>1665.3 and col1[i]<1665.6:
                 yvalueoriginal2.append(colav1[i]) 
                 xvalueoriginal2.append(col1[i])
             
@@ -112,7 +115,7 @@ for omicron in range(6,11):
             if col1[i]>1612.1 and col1[i]<1612.5:
                 yvalue1.append(colav1[i])
                 xvalue1.append(col1[i])
-            if col1[i]>1665.35 and col1[i]<1665.45:
+            if col1[i]>1665.3 and col1[i]<1665.6:
                 if col1[i]>1665.42 and col1[i]<1665.46:
                     continue
                 yvalue2.append(colav1[i])
@@ -162,6 +165,7 @@ for omicron in range(6,11):
         
         
         
+            
         
         
         def monte_carlo_integration(x, y, y_err, n_simulations=1000):
@@ -201,6 +205,7 @@ for omicron in range(6,11):
         xvalueoriginal3=np.asarray(xvalueoriginal3)
         yvalueoriginal3=np.asarray(yvalueoriginal3)
         #p, p_err = np.polyfit(xvalue3, yvalue3, 6)
+        
         #RFI flagging
         prep=np.polyfit(xvalue3, yvalue3, 2)
         y_model_pre = polyN(xvalueoriginal3,prep)
@@ -260,6 +265,7 @@ for omicron in range(6,11):
         xvalueoriginal3=np.asarray(xvalueoriginal3)
         xvalueoriginalchop2=xvalueoriginal2[10:len(xvalueoriginal2)-10] 
        
+        """
         if n==5 or n==6 :
             popt2, pcov2 = curve_fit(func2, xvalue2, yvalue2)
             
@@ -277,21 +283,26 @@ for omicron in range(6,11):
             xvalue1=xvalue1[10:len(xvalue1)-10]
             yvaluesub1=convol1chopped-func2(xvalue1, *popt1)
         
-        
-        
+        """
+        #convert to 1665 line (next 4 lines)
+        """
+        xvalue3=xvalue2
+        yvalue3=yvalue2
+        xvalueoriginal3=xvalueoriginal2
+        convol3chopped=convol2chopped
+        """
         xvalueoriginalchop3=xvalueoriginal3[10:len(xvalueoriginal3)-10]
         
-        p= np.polyfit(xvalue3, yvalue3, 4)
+        p= np.polyfit(xvalue3, yvalue3, 6)
         
-        if n==1 or n==3:
-            p= np.polyfit(xvalue3, yvalue3, 2)
+        
             
         
         
     
         y_model = polyN(xvalueoriginalchop3,p)
         
-        #unc=np.polyval(np.sqrt(np.diag(cov)),xvalue3)
+        
         
         
         
@@ -300,21 +311,9 @@ for omicron in range(6,11):
         yvaluesub3=convol3chopped-y_model
         
         
-       
-        
-        #print(np.std(yvalue3))
-        
-       
-        
-        
-        #poptsl, pcovsl = curve_fit(func, xvalueoriginalchop3, yvaluesub3pre)
-        #=yvaluesub3pre-func(xvalueoriginalchop3,*poptsl)
-        
-        
-        
         
         if n==1 and omicron==6:
-            yvaluesub3=yvaluesub3*1.09
+            yvaluesub3=yvaluesub3*0.986 #because the conversion factor is 35 not 35.5
            
         
         popt4, pcov4 = curve_fit(func2, xvalue4, yvalue4)
@@ -324,15 +323,7 @@ for omicron in range(6,11):
         def func4(x,a,b,c,d,e,f):
             return a*np.exp(-(x-b)**2/(2*c**2))+d*np.exp(-(x-e)**2/(2*f**2))
         
-        """
-        d=popt[3]
-        e=popt[4]
-        f=popt[5]
-        """
-        
-        
-        
-       
+    
         velocitychop1=velocity1[10:len(velocity1)-10]
         velocitychop1=np.asarray(velocitychop1)
         velocitychop2=velocity2[10:len(velocity2)-10]
@@ -342,26 +333,33 @@ for omicron in range(6,11):
         velocitychop4=velocity4[10:len(velocity4)-10]
         velocitychop4=np.asarray(velocitychop4)
         
+        #velocitychop3=velocitychop2 # convert to 1665
         
         #plt.plot(velocitychop3,yvaluesub3,label=po)
         
     
         #plt.axhline(y=0,color='black',linestyle='dashdot',label='Flux=0 line')
         #plt.legend()
-       
-        mask = ((xvalueoriginalchop3 > 1667.1) & (xvalueoriginalchop3 < 1667.38)) | ((xvalueoriginalchop3 > 1667.45) & (xvalueoriginalchop3 < 1667.7))
         
+        
+        
+        
+        # following line is for 1665 
+        #mask = ((xvalueoriginalchop3 > 1665.2) & (xvalueoriginalchop3 < 1665.42)) | ((xvalueoriginalchop3 > 1665.46) & (xvalueoriginalchop3 < 1665.7))
+        
+        #1667 Line
+        
+        mask = ((xvalueoriginalchop3 > 1667.1) & (xvalueoriginalchop3 < 1667.38)) | ((xvalueoriginalchop3 > 1667.45) & (xvalueoriginalchop3 < 1667.7))
         if n==1 or n==3:
             mask = ((xvalueoriginalchop3 > 1667.1) & (xvalueoriginalchop3 < 1667.38)) | ((xvalueoriginalchop3 > 1667.45) & (xvalueoriginalchop3 < 1667.7))
-            
-    
         yvaluesubsampl = yvaluesub3[mask]
-        xvaluesampl=velocitychop3[mask]
-        xvaluesamplfreq=xvalueoriginalchop3[mask]
-        model=y_model[mask]
+        
         
         #testing frequency range
         """
+        xvaluesampl=velocitychop3[mask]
+        xvaluesamplfreq=xvalueoriginalchop3[mask]
+        model=y_model[mask]
         print(np.std(yvaluesubsampl))
         if n==1 or n==3:
             plt.plot(xvaluesamplfreq,yvaluesubsampl)
@@ -370,6 +368,8 @@ for omicron in range(6,11):
             plt.plot(xvaluesamplfreq,model)
             plt.axhline(y=np.mean(yvalue3),color='black',linestyle='dashdot',label='Flux=0 line')
         
+        """
+        #Gaussian fit
         """
         popt, pcov = curve_fit(func4, velocitychop3,yvaluesub3,p0=(0.04,-7,0.2,0.05,-8,0.2),method='lm',maxfev=5000)
         
@@ -381,7 +381,11 @@ for omicron in range(6,11):
         f=popt[5]
         
         #NOH=quad(func4,velocitychop3[-1],velocitychop3[0],args=(a,b,c,d,e,f))
+        """
+        #1667
         mask2 = ((xvalueoriginalchop3 > 1667.37) & (xvalueoriginalchop3 < 1667.45))
+        #1665  
+        #mask2 = ((xvalueoriginalchop3 > 1665.42) & (xvalueoriginalchop3 < 1665.46))
         yvalueline=yvaluesub3[mask2]
         xvalueline=xvalueoriginalchop3[mask2]
         NOH2=integrate.simpson(yvalueline,dx=velocitychop3[0]-velocitychop3[1])
@@ -553,7 +557,7 @@ for omicron in range(6,11):
         """
     
 # Open the file in write mode
-with open('int_intensity.txt', 'w') as wf:
+with open('int_intensity_corr_1667.txt', 'w') as wf:
      writer=csv.writer(wf,delimiter=' ')
      
      Column1=I
