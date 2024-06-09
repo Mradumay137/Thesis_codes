@@ -26,6 +26,8 @@ import statistics
 from collections import Counter
 from scipy.fft import fft, ifft
 
+rfi1667=[]
+rfi1665=[]
 NOHvalues1=[]
 NOHvalues2=[]
 stdev=[]
@@ -62,8 +64,8 @@ for u in range(1,3):
             flinemin=1667.38
             flinemax=1667.44
             fres=1667.3590
-            vmin=-10
-            vmax=0
+            vmin=-11
+            vmax=-1.5
             Tex=4
         if u==2:
             C1=4
@@ -72,9 +74,9 @@ for u in range(1,3):
             flinemin=1665.42
             flinemax=1665.46
             fres=1665.4019
-            vmin=-10
-            vmax=0
-            Tex=3.75
+            vmin=-11
+            vmax=-1.5
+            Tex=3.65
         if j==47 or j==48 or j==49 or j==51:
             s=f'S{j-41}OH.dat'
                
@@ -126,32 +128,36 @@ for u in range(1,3):
        
         popt2, pcov2 = curve_fit(func2, xwoline, ywoline)
         
+        ywline=np.asarray(ywline)
+        xwline=np.asarray(xwline)
         
-        if  u==2:
+        
+       
              
-            def polyN(x, p):
-            	y = 0
-            	i = len(p) - 1
-            	p = np.flip(p)
-            	while (i >= 0):
-            		#print(i)
-            		y += p[i]*x**float(i)
-            		i -= 1
-            	return y
+        def polyN(x, p):
+        	y = 0
+        	i = len(p) - 1
+        	p = np.flip(p)
+        	while (i >= 0):
+        		#print(i)
+        		y += p[i]*x**float(i)
+        		i -= 1
+        	return y
+        
+        
+        
+        ywoline=np.asarray(ywoline)
+        xwoline=np.asarray(xwoline)
+        
+        
+       
+        p = np.polyfit(xwoline, ywoline, 6)
+        
+        
+        
+        
+        y_model = polyN(xwline, p)
             
-            ywline=np.asarray(ywline)
-            xwline=np.asarray(xwline)
-            
-            ywoline=np.asarray(ywoline)
-            xwoline=np.asarray(xwoline)
-            
-            
-           
-            p = np.polyfit(xwoline, ywoline, 6)
-            
-            
-            
-            y_model = polyN(xwline, p)
             
         
         ywline=np.asarray(ywline)
@@ -159,28 +165,47 @@ for u in range(1,3):
         
         
         
-        ysub=ywline-func2(xwline, *popt2)
+        #ysub=ywline-func2(xwline, *popt2)
         
-        popt3,pcov3=curve_fit(func0,xwline,ysub)
+        ysub=ywline-y_model
+        ysub2=ysub
         
-        ysub2=ysub-func0(xwline,*popt3)
+        #popt3,pcov3=curve_fit(func0,xwline,ysub)
+        
+        #if u==2:
+            #ysub=ywline-y_model
+        
+        #ysub2=ysub-func0(xwline,*popt3)
         
         
         
         
-        if u==2:
-            ysub=ywline-y_model
-            ysub2=ysub
+        
+            
         mean=np.mean(ysub2)
         baseline.append(mean)
         
+        
+            
+        def func(x,a,b,c):
+            return a*np.exp(-(x-b)**2/(2*c**2))
+        
+        """
+        poptg,pcovg=curve_fit(func,xwline,ysub)
+        
+        
+        mask=((xwline > flinemin-0.08) & (xwline < flinemin)) | ((xwline > flinemax) & (xwline < flinemax+0.08))
+        ywoline2=ysub[mask]
+        xwoline2=xwline[mask]
+        p3= np.polyfit(xwoline2, ywoline2, 10)
+        y_model_new=polyN(xwline,p3)
+        ysub=ysub-y_model_new
+        """    
         for i in range(0,len(xwline)):
             if xwline[i]>fmin and xwline[i]<fmax:
                 col4.append(xwline[i])
                 col5.append(ysub2[i])
-            
-        def func(x,a,b,c):
-            return a*np.exp(-(x-b)**2/(2*c**2))
+        
         velocity=[]
         cs=3*10**5
         for i in range(0,len(col4)):
@@ -246,7 +271,7 @@ for u in range(1,3):
                     varr.append(velocity[gamma])
             maxi=np.argmax(linearr)        
             vcentral=varr[maxi]
-                
+            
            
             
         if u==2:
@@ -256,19 +281,29 @@ for u in range(1,3):
                     varr.append(velocity[gamma])
             maxi=np.argmax(linearr)        
             vcentral=varr[maxi]
-                
+             
             
         col6=col5smooth[np.where((velocity>vmin)&(velocity<vmax))]
         velocitychop=bins[np.where((velocity>vmin)&(velocity<vmax))]
+        """
         
         plt.figure(figsize=(5,5))
-        plt.plot(velocity,col5smooth)
-        
+        plt.plot(velocitychop,col6,label=j)
+        plt.figure(figsize=(5,5))
+        plt.plot(xwline,ywline)
+        plt.axvline(x=vmin)
+        plt.axvline(x=vmax)
+        plt.legend()
+        """
         N=integrate.simpson(col6,dx=velocitychop[0]-velocitychop[1])
         NOH=N*(C1*10**(14))*(Tex/(Tex-3))*0.87
         
         sigma3=np.std(col5smooth)
         Nsig=(velocitychop[0]- velocitychop[1])*np.sqrt(len(col5smooth))*sigma3*C1*10**14*Tex/(Tex-3)
+        
+        if j==1:
+            Nsigref=Nsig
+                
         """
         plt.figure(figsize=(5,5))
         plt.plot(velocity,col5smooth,'k',label='manual')
@@ -295,7 +330,13 @@ for u in range(1,3):
             NOHvalues1.append(NOH)
         if u==2:
             NOHvalues2.append(NOH)
+        
+        if u==1:
+            rfi1667.append(Nsig)
+        if u==2:
+            rfi1665.append(Nsig)
             
+    
         #plt.figure(figsize=(5,5))
         """
         hist,binedge=np.histogram(col5smooth,bins=10,density=False)
@@ -408,17 +449,23 @@ for u in range(1,3):
         del NOHvalues2[47]
         del NOHvalues2[46]
         
+for omicron in range(0,len(NOHvalues1)):
+    
+    if NOHvalues1[omicron]>0.85*10**14 and NOHvalues2[omicron]<0.85*10**14:
+        NOHvalues1[omicron]=0
+        NOHvalues2[omicron]=0
+    if NOHvalues2[omicron]>0.85*10**14 and NOHvalues1[omicron]<0.85*10**14:
+        NOHvalues2[omicron]=0
+        NOHvalues1[omicron]=0
    
-        
-       
-    with open('Output.txt', 'w') as wf:
-         writer=csv.writer(wf,delimiter=' ')
-         Column1=NOHvalues1
-         Column2=NOHvalues2
-         Column3=sigmaarr1667
-         Column4=sigmaarr1665
-         writer.writerows(zip(Column1,Column2,Column3,Column4))
+with open('Output.txt', 'w') as wf:
+     writer=csv.writer(wf,delimiter=' ')
+     Column1=NOHvalues1
+     Column2=NOHvalues2
+     Column3=sigmaarr1667
+     Column4=sigmaarr1665
+     writer.writerows(zip(Column1,Column2,Column3,Column4))
 
-            
-            
+        
+        
    

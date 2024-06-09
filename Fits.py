@@ -56,7 +56,25 @@ for i  in range(1,3):
     c2=colordata[:,1]
     c3=colordata[:,2]
     c4=colordata[:,3]
-    c3=abs(c1-c2)
+    
+    
+    cdiff=[]
+    cav=[]
+    cperc=[]
+    for gamma in range(0,len(c1)):
+        cd=abs(abs(c1[gamma]-c2[gamma]))
+        if c1[gamma]<0.85*10**14 or c2[gamma]<0.85*10**14:
+            cperc.append(0)
+        elif cd < abs(c3[gamma]):
+            cperc.append(0)
+        else:
+            ca=(c1[gamma]+c2[gamma])/2
+            cper=100*cd/ca
+            cperc.append(cper)
+            print(gamma)
+    
+    
+    
     if i==1:
         ax.imshow(hdu.data, origin='lower') 
         ax.grid(color='white', ls='solid')
@@ -130,27 +148,27 @@ for i  in range(1,3):
 plt.savefig("Poster",dpi=300)
 plt.show()
 
-plt.figure(figsize=(15,15))
+#plt.figure(figsize=(15,15))
 
-plt.plot(file2,percent2,label='1665')
-xticks=np.arange(1,47,1) 
+#plt.plot(file2,percent2,label='1665')
+#xticks=np.arange(1,47,1) 
  
-plt.yticks(np.arange(0, 3000, step=100))  # Set label locations.
+#plt.yticks(np.arange(0, 3000, step=100))  # Set label locations.
 
-plt.xticks(file2,xticks)
-plt.axhline(y=30)
+#plt.xticks(file2,xticks)
+#plt.axhline(y=30)
 
 
 
-plt.plot(file1,percent1,label='1667') 
+#plt.plot(file1,percent1,label='1667') 
 pixel_scale_deg = hdu.header['CDELT2']
 
 # Convert degrees to arcseconds if needed
 pixel_scale_arcsec = pixel_scale_deg * 3600
 
 print(f'Pixel scale: {pixel_scale_arcsec:.2f} arcseconds per pixel')
-plt.legend()
-
+#plt.legend()
+"""
 def func0(x,m,inter):
     return m*x+inter
 plt.figure(figsize=(5,5))
@@ -160,7 +178,7 @@ plt.errorbar(c1,c2, xerr=c4,fmt="o")
 x=np.linspace(0,3*10**14)
 y=np.linspace(0,3*10**14)
 plt.plot(x,y)
-
+"""
 """
 popt,pcov=curve_fit(func0,mean,size,p0=(2*10**14,2*10**13))
 print(popt)
