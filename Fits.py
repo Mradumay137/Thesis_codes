@@ -61,6 +61,8 @@ for i  in range(1,3):
     cdiff=[]
     cav=[]
     cperc=[]
+    #see unreliable value
+    """
     for gamma in range(0,len(c1)):
         cd=abs(abs(c1[gamma]-c2[gamma]))
         if c1[gamma]<0.85*10**14 or c2[gamma]<0.85*10**14:
@@ -73,7 +75,7 @@ for i  in range(1,3):
             cperc.append(cper)
             print(gamma)
     
-    
+    """
     
     if i==1:
         ax.imshow(hdu.data, origin='lower') 
