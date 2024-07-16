@@ -34,6 +34,8 @@ stdev=[]
 sigmaarr1667=[]
 sigmaarr1665=[]
 meanarr=[]
+badbase=[]
+position=[]
 for u in range(1,3):
     baseline=[]
     itera=[]
@@ -64,8 +66,8 @@ for u in range(1,3):
             flinemin=1667.38
             flinemax=1667.44
             fres=1667.3590
-            vmin=-11
-            vmax=-1.5
+            vmin=-25
+            vmax=10
             Tex=4
         if u==2:
             C1=4
@@ -74,9 +76,9 @@ for u in range(1,3):
             flinemin=1665.42
             flinemax=1665.46
             fres=1665.4019
-            vmin=-11
-            vmax=-1.5
-            Tex=3.65
+            vmin=-18
+            vmax=0
+            Tex=3.72
         if j==47 or j==48 or j==49 or j==51:
             s=f'S{j-41}OH.dat'
                
@@ -131,6 +133,31 @@ for u in range(1,3):
         ywline=np.asarray(ywline)
         xwline=np.asarray(xwline)
         
+        #RFI removal
+        
+        """
+        
+        gamma=100
+            
+        x=np.linspace(fmin,fmax,gamma)
+        for beta in range(0,gamma-2):
+            
+            low=x[beta]
+            high=x[beta+1]
+            
+            mask=(xwline > low) & (xwline < high)
+            ybin= ywline[mask]
+            xbin = xwline[mask]
+            dx=xwline[1]-xwline[0]
+            
+            dy=np.gradient(ybin, dx)
+            
+            if np.std(dy)>20:
+                exclusion_mask = ~np.isin(ywline, ybin)
+                ywline = ywline[exclusion_mask]
+                xwline = xwline[exclusion_mask]
+               
+        """
         
        
              
@@ -157,6 +184,12 @@ for u in range(1,3):
         
         
         y_model = polyN(xwline, p)
+        
+        
+        model_rot=polyN(xwoline, p)
+        
+        
+            
             
             
         
@@ -167,8 +200,18 @@ for u in range(1,3):
         
         #ysub=ywline-func2(xwline, *popt2)
         
-        ysub=ywline-y_model
-        ysub2=ysub
+        ysub2=ywline-y_model
+        
+        
+        
+        """
+        mask=((xwline > flinemin-0.06) & (xwline < flinemax+0.06)) 
+        ymask=ysub[mask]
+        ysub2=ysub-abs(np.mean(ymask))
+        """
+        
+        
+    
         
         #popt3,pcov3=curve_fit(func0,xwline,ysub)
         
@@ -178,13 +221,18 @@ for u in range(1,3):
         #ysub2=ysub-func0(xwline,*popt3)
         
         
+             
         
         
+        #check efficacy of baseline fit
         
-            
-        mean=np.mean(ysub2)
+        """
+        mean=np.mean(ysub2[mask])
+        if mean>0.0005:
+            badbase.append(mean)
+            position.append(j)
         baseline.append(mean)
-        
+        """
         
             
         def func(x,a,b,c):
@@ -214,6 +262,112 @@ for u in range(1,3):
         
         col5smooth=convolve(col5,Box1DKernel(1))
         velocity=np.asarray(velocity)
+        
+        if j>=1 and j<=3:
+            vmin=-10
+            vmax=-4
+        
+        if j>=4 and j<=5:
+            vmin=-15
+            vmax=-6
+        if j>5 and j<9:
+            vmin=-11
+            vmax=-4
+        if j==9 or j==10:
+            vmin=-13
+            vmax=-3
+        if j>10 and j<15:
+            vmin=-10
+            vmax=-4
+        if j==15:
+            vmin=-12 
+            vmax=-6
+            
+        if j>15 and j<20:
+            vmin=-10 
+            vmax=-4
+        if j>=20 and j<=30:
+            vmin=-8
+            vmax=-1
+            
+        if j==31 or j==32:
+            vmin=-10
+            vmax=0
+        
+        if j==33:
+            vmin=-13
+            vmax=-3
+        if j==40:
+            vmin=-16
+            vmax=-0
+        if j==34:
+            vmin=-9
+            vmax=-5
+        if j>34 and j<39:
+            vmin=-8
+            vmax=0
+        if j==39:
+            vmin=-6
+            vmax=0
+        if j==41:
+            vmin=-10
+            vmax=-4
+        if j==42:
+            vmin=-8
+            vmax=-2
+            
+        if j==43:
+            vmin=-7.5
+            vmax=-3
+        if j>43 and j<45:
+            vmin=-12
+            vmax=-2
+        if j==45 or j==46:
+            vmin=-14
+            vmax=-8 
+        if j>46 and j<52:
+            vmin=-10
+            vmax=-3
+        
+        mask2=((velocity > vmin-5) & (velocity < vmax+5)) 
+        velocitysmall=velocity[mask2]
+        col5smoothsmall=col5smooth[mask2]
+        
+        psmall=np.polyfit(velocitysmall,col5smoothsmall, 8)
+        
+        modelmask=polyN(velocitysmall, psmall)
+        
+        
+        
+        plt.figure(figsize=(5,5))
+        
+        plt.plot(velocitysmall,modelmask,label=j)
+        
+        
+        
+        plt.plot(velocitysmall,col5smoothsmall)
+        
+        plt.legend()
+        
+        
+        
+        
+        def first_derivative(array, dx):
+            return np.gradient(array, dx)
+
+        def second_derivative(array, dx):
+            first_deriv = np.gradient(array, dx)
+            return np.gradient(first_deriv, dx)
+
+        dx=xwline[1]-xwline[0]
+        fderi = first_derivative(modelmask, dx)
+        sderi = second_derivative(modelmask, dx)
+        mid_index = len(velocitysmall) // 2
+
+        R = abs(((1 + fderi[mid_index]**2)**1.5) / sderi[mid_index])
+        
+        print(R)
+        
         bins=[velocity[0],velocity[1],velocity[2]]
         for eta in range(3,len(velocity)):
             bin1=(velocity[eta]+velocity[eta-1]+velocity[eta-2]+velocity[eta-3])/4
@@ -258,7 +412,7 @@ for u in range(1,3):
             
         
         """
-        N=quad(func,velocity[-1],velocity[0],args=(a,b,c))
+        
         """
         bgsd=np.std(ywoline)
         linearr=[]
@@ -281,32 +435,66 @@ for u in range(1,3):
                     varr.append(velocity[gamma])
             maxi=np.argmax(linearr)        
             vcentral=varr[maxi]
-             
             
+           
+        
+        
+    
         col6=col5smooth[np.where((velocity>vmin)&(velocity<vmax))]
         velocitychop=bins[np.where((velocity>vmin)&(velocity<vmax))]
-        """
         
+        
+        
+        #popt, pcov = curve_fit(func, velocitychop,col6,p0=(0.04,-(abs(vmin)-abs(vmax))/2,0.2),method='lm',maxfev=10000)
+        
+        """
+        plt.figure(figsize=(5,5))
+        plt.plot(velocity,col5smooth,label=j)
+        plt.xlim(-25,25)
+        
+        plt.legend()
+        """
+        """
         plt.figure(figsize=(5,5))
         plt.plot(velocitychop,col6,label=j)
         plt.figure(figsize=(5,5))
-        plt.plot(xwline,ywline)
+        plt.plot(velocity,col5smooth)
         plt.axvline(x=vmin)
         plt.axvline(x=vmax)
         plt.legend()
         """
         N=integrate.simpson(col6,dx=velocitychop[0]-velocitychop[1])
-        NOH=N*(C1*10**(14))*(Tex/(Tex-3))*0.87
         
-        sigma3=np.std(col5smooth)
-        Nsig=(velocitychop[0]- velocitychop[1])*np.sqrt(len(col5smooth))*sigma3*C1*10**14*Tex/(Tex-3)
+        #plt.figure(figsize=(5,5))
+        #plt.plot(velocitychop,col6,label=j)
+        #plt.legend()
+        NOH=abs(N)*(C1*10**(14))*(Tex/(Tex-3))*0.87
+        
+        if u==1:
+            if R>0.051:
+                NOH=0
+        
+        if u==2:
+        
+            if R > 0.1:
+                NOH=0
+        
+        mask=((velocity > 10) & (velocity < 16)) 
+        sigcol=col5smooth[mask]
+        sigma3=np.std(sigcol)
+        #sigma3=integrate.simpson(sigcol,dx=velocitychop[0]-velocitychop[1])
+        Nsig=(velocitychop[0]- velocitychop[1])*np.sqrt(len(col6))*sigma3*C1*10**14*Tex/(Tex-3)
         
         if j==1:
             Nsigref=Nsig
                 
         """
         plt.figure(figsize=(5,5))
-        plt.plot(velocity,col5smooth,'k',label='manual')
+        plt.plot(velocity,col5smooth,'k',label=j)
+        plt.legend()
+        plt.xlim(-25,25)
+        """
+        """
         plt.axhline(y=0,color='black',linestyle='dashdot')
         if u==1:
             plt.legend()
@@ -413,9 +601,9 @@ for u in range(1,3):
         
         
         
-        """
-        plt.plot(velocity, func(velocity,*popt),'b',label='Fit')
-        """
+        
+        #plt.plot(velocity, func(velocity,*popt),'b',label='Fit')
+        
         #plt.axvline(x=vmin)
         #plt.axvline(x=vmax)
         
@@ -448,16 +636,18 @@ for u in range(1,3):
         del NOHvalues2[48]
         del NOHvalues2[47]
         del NOHvalues2[46]
-        
-for omicron in range(0,len(NOHvalues1)):
+       
+for omicron in range(1,len(NOHvalues1)):
     
-    if NOHvalues1[omicron]>0.85*10**14 and NOHvalues2[omicron]<0.85*10**14:
-        NOHvalues1[omicron]=0
-        NOHvalues2[omicron]=0
-    if NOHvalues2[omicron]>0.85*10**14 and NOHvalues1[omicron]<0.85*10**14:
-        NOHvalues2[omicron]=0
-        NOHvalues1[omicron]=0
-   
+    if abs(NOHvalues1[omicron])> abs(1.5*NOHvalues2[omicron]) and abs(NOHvalues1[omicron])>0.5*10**14 and abs(NOHvalues2[omicron])>0.5*10**14 : 
+        #NOHvalues1[omicron]=NOHvalues2[omicron]
+        print(omicron,NOHvalues1[omicron]/10**14,NOHvalues2[omicron]/10**14)
+        
+     
+    if abs(NOHvalues2[omicron])> abs(1.5*NOHvalues1[omicron]) and abs(NOHvalues2[omicron])>0.5*10**14 and abs(NOHvalues1[omicron])>0.5*10**14:
+        #NOHvalues2[omicron]=NOHvalues1[omicron]
+        print(omicron,NOHvalues1[omicron]/10**14,NOHvalues2[omicron]/10**14)
+  
 with open('Output.txt', 'w') as wf:
      writer=csv.writer(wf,delimiter=' ')
      Column1=NOHvalues1
@@ -466,6 +656,5 @@ with open('Output.txt', 'w') as wf:
      Column4=sigmaarr1665
      writer.writerows(zip(Column1,Column2,Column3,Column4))
 
-        
-        
+       
    
